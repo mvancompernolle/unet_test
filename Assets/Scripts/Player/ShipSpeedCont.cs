@@ -28,6 +28,8 @@ public class ShipSpeedCont : NetworkBehaviour
     {
         if (!isLocalPlayer) return;
 
+        Debug.Log("speed: " + masterComp.inputCont.shipInputs.direction);
+
         // get direction of the left stick
         targetDir.x = masterComp.inputCont.shipInputs.direction.x;
         targetDir.y = masterComp.inputCont.shipInputs.direction.y;
@@ -41,7 +43,7 @@ public class ShipSpeedCont : NetworkBehaviour
     // Physics related update
     void FixedUpdate()
     {
-        if (!isLocalPlayer) return;
+        //if (!isLocalPlayer) return;
 
         // if left stick is pointing, accelerate
         if ((Mathf.Abs(targetDir.x) >= 0.5f || Mathf.Abs(targetDir.y) >= 0.5f))

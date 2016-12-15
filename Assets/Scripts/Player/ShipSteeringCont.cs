@@ -29,7 +29,7 @@ public class ShipSteeringCont : NetworkBehaviour
     // Input related update
     void Update()
     {
-        if (!isLocalPlayer) return;
+        //if (!isLocalPlayer) return;
 
         // get direction of the left stick
         targetDir.x = masterComp.inputCont.shipInputs.direction.x;
@@ -39,7 +39,7 @@ public class ShipSteeringCont : NetworkBehaviour
     // Physics related update
     void FixedUpdate()
     {
-        if (!isLocalPlayer) return;
+        //if (!isLocalPlayer) return;
 
         // effect steering if left stick is directed
         if ((Mathf.Abs(targetDir.x) >= 0.2f || Mathf.Abs(targetDir.y) >= 0.2f))

@@ -2,8 +2,10 @@
 using UnityEngine.Networking;
 using System.Collections;
 
+[System.Serializable]
 public struct ShipInputs
 {
+    [System.Serializable]
     public struct Button
     {
         public bool isPressed;

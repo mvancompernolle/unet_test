@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using InControl;
+using UnityEngine.Networking;
 
 public class ShipActions : PlayerActionSet
 {
@@ -103,7 +104,7 @@ public class ShipControllerInput : BaseShipInputCont
 
         if (inputIsAttached)
         {
-            Debug.Log("updating inputs - is server: " + isServer);
+            if (isServer) Debug.Log("huh????");
 
             shipInputs.warp.isPressed = actions.warp.IsPressed;
             shipInputs.boost.isPressed = actions.boost.IsPressed;
@@ -126,6 +127,17 @@ public class ShipControllerInput : BaseShipInputCont
             shipInputs.grind = actions.grind.Value;
             shipInputs.direction.x = actions.movement.X;
             shipInputs.direction.y = actions.movement.Y;
+
+            // send inputs to the server 
+            CmdUploadInput(shipInputs);
         }
+    }
+
+    [Command(channel = 0)]
+    private void CmdUploadInput(ShipInputs inputs)
+    {
+        Debug.Log("recieved ship inputs from client");
+        shipInputs = inputs;
+        Debug.Log(shipInputs.direction);
     }
 }
