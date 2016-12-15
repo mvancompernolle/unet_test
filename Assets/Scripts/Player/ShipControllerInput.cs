@@ -59,12 +59,14 @@ public class ShipActions : PlayerActionSet
     }
 }
 
+[NetworkSettings(sendInterval = 0.3f)]
 public class ShipControllerInput : BaseShipInputCont
 {
 
     public bool inputIsAttached { get; private set; }
     public ShipActions actions { get; private set; }
     public static List<InputDevice> devicesInUse = new List<InputDevice>();
+    Timer cmdTimer = new Timer(0.33f, true);
 
     void Start()
     {
@@ -87,8 +89,10 @@ public class ShipControllerInput : BaseShipInputCont
     // Update is called once per frame
     public override void Update()
     {
+        // if not local player, ignore an controller inputs!!!!
         if (!isLocalPlayer) return;
 
+        // check for controller assignment to the player
         if (!inputIsAttached)
         {
             // check for an available device
@@ -102,10 +106,10 @@ public class ShipControllerInput : BaseShipInputCont
             }
         }
 
+        // if you have an attached controller
         if (inputIsAttached)
         {
-            if (isServer) Debug.Log("huh????");
-
+            // get inputs from the controller and save them
             shipInputs.warp.isPressed = actions.warp.IsPressed;
             shipInputs.boost.isPressed = actions.boost.IsPressed;
             shipInputs.special.isPressed = actions.special.IsPressed;
@@ -128,16 +132,21 @@ public class ShipControllerInput : BaseShipInputCont
             shipInputs.direction.x = actions.movement.X;
             shipInputs.direction.y = actions.movement.Y;
 
-            // send inputs to the server 
-            CmdUploadInput(shipInputs);
+            // send inputs from controller to the server
+            if (cmdTimer.Update(Time.deltaTime))
+            {
+                CmdUploadInput(shipInputs);
+                cmdTimer.Activate();
+            }
+            //CmdUploadInput(shipInputs);
         }
     }
 
-    [Command(channel = 0)]
+    [Command(channel = 1)]
     private void CmdUploadInput(ShipInputs inputs)
     {
-        Debug.Log("recieved ship inputs from client");
+        // server recieves inputs from client
         shipInputs = inputs;
-        Debug.Log(shipInputs.direction);
+        if (!isLocalPlayer) Debug.Log("cmd recieved");
     }
 }

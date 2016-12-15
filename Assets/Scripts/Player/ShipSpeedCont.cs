@@ -26,9 +26,9 @@ public class ShipSpeedCont : NetworkBehaviour
     // Input related update
     void Update()
     {
-        if (!isLocalPlayer) return;
+        //if (!isLocalPlayer) return;
 
-        Debug.Log("speed: " + masterComp.inputCont.shipInputs.direction);
+        //Debug.Log("speed: " + masterComp.inputCont.shipInputs.direction);
 
         // get direction of the left stick
         targetDir.x = masterComp.inputCont.shipInputs.direction.x;
