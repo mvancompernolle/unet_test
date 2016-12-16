@@ -33,6 +33,7 @@ public class ShipMasterComp : NetworkBehaviour
     public ShipSpeedCont speedCont { get; private set; }
     public BaseShipInputCont inputCont { get; private set; }
     public ShipSteeringCont steeringCont { get; private set; }
+    public ShipAbilityCont abilityCont { get; private set; }
     // player info
     public int playerNum { get; private set; }
 
@@ -80,6 +81,7 @@ public class ShipMasterComp : NetworkBehaviour
         speedCont = GetComponent<ShipSpeedCont>();
         steeringCont = GetComponent<ShipSteeringCont>();
         inputCont = GetComponent<ShipControllerInput>();
+        abilityCont = GetComponent<ShipAbilityCont>();
     }
 
     void Start()

@@ -59,6 +59,17 @@ public class ShipActions : PlayerActionSet
     }
 }
 
+[SerializeField]
+public struct AbilityInput
+{
+    public Button boost;
+
+    public AbilityInput(ShipInputs inputs)
+    {
+        boost = inputs.boost;
+    }
+}
+
 [NetworkSettings(sendInterval = 0.3f)]
 public class ShipControllerInput : BaseShipInputCont
 {
@@ -67,6 +78,7 @@ public class ShipControllerInput : BaseShipInputCont
     public ShipActions actions { get; private set; }
     public static List<InputDevice> devicesInUse = new List<InputDevice>();
     Timer cmdTimer = new Timer(0.33f, true);
+    private ShipInputs prevInputs;
 
     void Start()
     {
@@ -91,6 +103,8 @@ public class ShipControllerInput : BaseShipInputCont
     {
         // if not local player, ignore an controller inputs!!!!
         if (!isLocalPlayer) return;
+
+        shipInputs = new ShipInputs();
 
         // check for controller assignment to the player
         if (!inputIsAttached)
@@ -133,20 +147,36 @@ public class ShipControllerInput : BaseShipInputCont
             shipInputs.direction.y = actions.movement.Y;
 
             // send inputs from controller to the server
+            CmdUploadMovementInput(shipInputs.direction);
+
+            if(prevInputs != shipInputs)
+                CmdUploadAbilityInput(new AbilityInput(shipInputs));
+
+            /*
             if (cmdTimer.Update(Time.deltaTime))
             {
                 CmdUploadInput(shipInputs);
                 cmdTimer.Activate();
             }
-            //CmdUploadInput(shipInputs);
+            */
         }
+
+        prevInputs = shipInputs;
     }
 
     [Command(channel = 1)]
-    private void CmdUploadInput(ShipInputs inputs)
+    private void CmdUploadMovementInput(Vector2 direction)
     {
         // server recieves inputs from client
-        shipInputs = inputs;
-        if (!isLocalPlayer) Debug.Log("cmd recieved");
+        shipInputs.direction = direction;
+        //if (!isLocalPlayer) Debug.Log("movement cmd recieved");
+    }
+
+    [Command(channel = 2)]
+    private void CmdUploadAbilityInput(AbilityInput abilites)
+    {
+        // server recieves inputs from client
+        shipInputs.boost = abilites.boost;
+        //Debug.Log("boost cmd recieved");
     }
 }

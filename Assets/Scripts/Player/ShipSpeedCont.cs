@@ -11,6 +11,13 @@ public class ShipSpeedCont : NetworkBehaviour
     public Vector2 lastVel { get; private set; }
     public float lastAngularVel { get; private set; }
 
+    // adjustors
+    public float startingMass { get; private set; }
+    private ValueAdjustor massAdjustor = new ValueAdjustor();
+    public ValueAdjustor maxSpeedAdjustors { get; private set; }
+    public LogicLocker accLockers { get; private set; }
+    public ValueAdjustor accAdjustors { get; private set; }
+
     // components
     private ShipMasterComp masterComp;
 
@@ -21,6 +28,12 @@ public class ShipSpeedCont : NetworkBehaviour
     {
         // get component references
         masterComp = GetComponent<ShipMasterComp>();
+        startingMass = masterComp.rbody.mass;
+
+        // init adjustors
+        maxSpeedAdjustors = new ValueAdjustor();
+        accAdjustors = new ValueAdjustor();
+        accLockers = new LogicLocker();
     }
 
     // Input related update
@@ -38,6 +51,8 @@ public class ShipSpeedCont : NetworkBehaviour
         CapSpeed();
         lastVel = masterComp.rbody.velocity;
         lastAngularVel = masterComp.rbody.angularVelocity;
+
+        maxSpeedAdjustors.UpdateTimedValues(Time.deltaTime);
     }
 
     // Physics related update
@@ -48,7 +63,7 @@ public class ShipSpeedCont : NetworkBehaviour
         // if left stick is pointing, accelerate
         if ((Mathf.Abs(targetDir.x) >= 0.5f || Mathf.Abs(targetDir.y) >= 0.5f))
         {
-            masterComp.rbody.AddForce(masterComp.steeringCont.GetCurrentDirection() * acceleration * ((targetDir.magnitude - 0.5f) * 2.0f));
+            masterComp.rbody.AddForce(masterComp.steeringCont.GetCurrentDirection() * GetAcc() * ((targetDir.magnitude - 0.5f) * 2.0f));
         }
         lastVel = masterComp.rbody.velocity;
         lastAngularVel = masterComp.rbody.angularVelocity;
@@ -57,7 +72,7 @@ public class ShipSpeedCont : NetworkBehaviour
     private void CapSpeed()
     {
         // update all speed adjustors and get their current speed left
-        float capSpeed = maxSpeed;
+        float capSpeed = maxSpeed + maxSpeedAdjustors.GetValue();
         // cap the max speed of the ship
         SetVelocity(masterComp.rbody.velocity.normalized * Mathf.Min(masterComp.rbody.velocity.magnitude, capSpeed));
         //Debug.Log("max speed: " + capSpeed + " curr speed: " + masterComp.rbody.velocity.magnitude);
@@ -87,5 +102,22 @@ public class ShipSpeedCont : NetworkBehaviour
     public float GetSpeed()
     {
         return masterComp.rbody.velocity.magnitude;
+    }
+
+    public float GetAcc()
+    {
+        return acceleration + accAdjustors.GetValue();
+    }
+
+    public void SetMassAdjustor(string key, float mass)
+    {
+        massAdjustor.SetAdjustor(key, mass);
+        masterComp.rbody.mass = startingMass + massAdjustor.GetValue();
+    }
+
+    public void RemoveMassAdjustor(string key)
+    {
+        massAdjustor.RemoveAdjustor(key);
+        masterComp.rbody.mass = startingMass + massAdjustor.GetValue();
     }
 }
