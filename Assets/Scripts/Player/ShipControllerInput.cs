@@ -63,10 +63,19 @@ public class ShipActions : PlayerActionSet
 public struct AbilityInput
 {
     public Button boost;
-
     public AbilityInput(ShipInputs inputs)
     {
         boost = inputs.boost;
+    }
+
+    public static bool operator ==(AbilityInput lhs, AbilityInput rhs)
+    {
+        return lhs.boost == rhs.boost;
+    }
+
+    public static bool operator !=(AbilityInput lhs, AbilityInput rhs)
+    {
+        return !(lhs.boost == rhs.boost);
     }
 }
 
@@ -78,7 +87,9 @@ public class ShipControllerInput : BaseShipInputCont
     public ShipActions actions { get; private set; }
     public static List<InputDevice> devicesInUse = new List<InputDevice>();
     Timer cmdTimer = new Timer(0.33f, true);
-    private ShipInputs prevInputs;
+    private AbilityInput prevAbilityInputs;
+    [SerializeField]
+    private float GRIND_RELEASE_VAL = 0.25f;
 
     void Start()
     {
@@ -142,15 +153,28 @@ public class ShipControllerInput : BaseShipInputCont
             shipInputs.flipShot.wasReleased = actions.flipShot.WasReleased;
             shipInputs.start.wasReleased = actions.start.WasReleased;
 
-            shipInputs.grind = actions.grind.Value;
+            float grindVal = actions.grind.Value;
+            if(grindVal < GRIND_RELEASE_VAL)
+            {
+                shipInputs.grind.wasReleased = true;
+                shipInputs.grind.isPressed = shipInputs.grind.wasPressed = false;
+            }
+            else
+            {
+                shipInputs.grind.wasPressed = !shipInputs.grind.isPressed ? true : false;
+                shipInputs.grind.isPressed = true;
+            }
+
             shipInputs.direction.x = actions.movement.X;
             shipInputs.direction.y = actions.movement.Y;
 
-            // send inputs from controller to the server
+            // send movement inputs to the server
             CmdUploadMovementInput(shipInputs.direction);
 
-            if(prevInputs != shipInputs)
-                CmdUploadAbilityInput(new AbilityInput(shipInputs));
+            // send ability inputs to the server
+            AbilityInput abilityInputs = new AbilityInput(shipInputs);
+            if (abilityInputs != prevAbilityInputs)
+                CmdUploadAbilityInput(abilityInputs);
 
             /*
             if (cmdTimer.Update(Time.deltaTime))
@@ -159,9 +183,9 @@ public class ShipControllerInput : BaseShipInputCont
                 cmdTimer.Activate();
             }
             */
-        }
 
-        prevInputs = shipInputs;
+            prevAbilityInputs = abilityInputs;
+        }
     }
 
     [Command(channel = 1)]
@@ -172,7 +196,7 @@ public class ShipControllerInput : BaseShipInputCont
         //if (!isLocalPlayer) Debug.Log("movement cmd recieved");
     }
 
-    [Command(channel = 2)]
+    [Command(channel = 3)]
     private void CmdUploadAbilityInput(AbilityInput abilites)
     {
         // server recieves inputs from client

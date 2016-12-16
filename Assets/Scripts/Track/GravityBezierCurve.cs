@@ -22,6 +22,12 @@ public class GravityBezierCurve : GravityRail
 
         UpdateLines();
 
+        lineRenderer.SetVertexCount(linePoints.Count);
+        for (int i = 0; i < linePoints.Count; ++i)
+        {
+            lineRenderer.SetPosition(i, linePoints[i]);
+        }
+
         CalculateBounds();
 
         // estimate approximate curve length

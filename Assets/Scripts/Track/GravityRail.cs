@@ -8,7 +8,7 @@ public abstract class GravityRail : MonoBehaviour
 
     // line variables
     protected List<Vector2> linePoints;
-
+    protected LineRenderer lineRenderer;
 
     public class RailInfo
     {
@@ -36,6 +36,11 @@ public abstract class GravityRail : MonoBehaviour
 
     public virtual void Awake()
     {
+        // setup line renderer
+        lineRenderer = GetComponent<LineRenderer>();
+        lineRenderer.SetWidth(0.5f, 0.5f);
+        lineRenderer.enabled = true;
+        lineRenderer.SetColors(Color.red, Color.red);
     }
 
     // Use this for initialization

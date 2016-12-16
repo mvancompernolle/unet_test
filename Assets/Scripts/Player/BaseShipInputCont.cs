@@ -37,7 +37,7 @@ public struct ShipInputs
     // "harder" to use, or "harder" to rebind.
 
     // Esme Allignment Syndrome (EAS), lol.
-    public float grind;
+    public Button grind;
     public Button warp;
     public Button join;
     public Button boost;
@@ -56,16 +56,6 @@ public struct ShipInputs
         return boost == inputs.boost;
     }
     */
-
-    public static bool operator ==(ShipInputs lhs, ShipInputs rhs)
-    {
-        return lhs.boost == rhs.boost;
-    }
-
-    public static bool operator !=(ShipInputs lhs, ShipInputs rhs)
-    {
-        return lhs.boost != rhs.boost;
-    }
 };
 
 public abstract class BaseShipInputCont : NetworkBehaviour

@@ -19,6 +19,10 @@ public class GravityLineSeg : GravityRail
         base.Start();
 
         UpdateLines();
+
+        lineRenderer.SetVertexCount(2);
+        lineRenderer.SetPosition(0, point1);
+        lineRenderer.SetPosition(1, point2);
     }
 
     public override void Reset()
@@ -31,7 +35,6 @@ public class GravityLineSeg : GravityRail
     void Update()
     {
     }
-
 
     public override bool isPointInRange(Vector2 point, float dist)
     {

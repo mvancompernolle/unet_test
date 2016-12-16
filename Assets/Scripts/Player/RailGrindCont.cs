@@ -1,7 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.Networking;
 
-public class RailGrindCont : MonoBehaviour
+public class RailGrindCont : NetworkBehaviour
 {
     // rail grab variables
     private float maxGrabAngle = 90.0f;
@@ -44,6 +45,27 @@ public class RailGrindCont : MonoBehaviour
     private float ALIGNMENT_SPEED_CHANGE_RATE = 10.0f;
     private float currAlignmentSpeedBonus = 0.0f;
 
+    struct GrindInputState
+    {
+        public int id;
+        public Button grind;
+        public float timeStamp;
+        public bool clientAcknowledged;
+        public bool serverAcknowledged;
+    }
+
+    // networking
+    // client
+    private GrindInputState[] clientGrindHistory;
+    private int clientGrindInputCmdID = 0;
+    private int lastAckGrindCmdID = -1;
+    [SerializeField]
+    private int clientCmdHistorySize = 10;
+    private Button prevGrindButton;
+
+    // server
+    private Queue<GrindInputState> serverGrindHistory = new Queue<GrindInputState>();
+
     void Awake()
     {
         // get component references
@@ -69,6 +91,12 @@ public class RailGrindCont : MonoBehaviour
         grindLockers = new LogicLocker();
         JUMP_SPEED_ADJUSTER_NAME += gameObject.GetInstanceID();
         ATTACHED_ADJUSTER_NAME += gameObject.GetInstanceID();
+
+        // listen for server detach events
+        EventServerGrindDetached += OnServerGrindDetached;
+
+        // init grind commands
+        clientGrindHistory = new GrindInputState[clientCmdHistorySize];
     }
 
     // Update is called once per frame
@@ -81,7 +109,7 @@ public class RailGrindCont : MonoBehaviour
         List<GravityRail.RailInfo> railsInRange = track.GetRailInfoWithinDist(transform.position, grabDist);
 
         // see if grind is released
-        if (masterComp.inputCont.shipInputs.grind < 0.25f)
+        if (masterComp.inputCont.shipInputs.grind.wasReleased)
         {
             grindReleased = true;
             grabFramesLeft = 0;
@@ -134,6 +162,50 @@ public class RailGrindCont : MonoBehaviour
                 masterComp.speedCont.maxSpeedAdjustors.RemoveAdjustor(JUMP_SPEED_ADJUSTER_NAME);
             }
         }
+
+        // if grind changed, send a new grind input command
+        if( prevGrindButton != masterComp.inputCont.shipInputs.grind)
+        {
+            GrindInputState grindInputState = new GrindInputState();
+            grindInputState.grind = masterComp.inputCont.shipInputs.grind;
+            int index = clientGrindInputCmdID % clientCmdHistorySize;
+            grindInputState.id = clientGrindInputCmdID++;
+            grindInputState.timeStamp = GameMode.singleton.gameTime;
+
+            clientGrindHistory[index] = grindInputState;
+
+            //CmdUploadGrindInput(grindInputState);
+        }
+
+        prevGrindButton = masterComp.inputCont.shipInputs.grind;
+    }
+
+    [Server]
+    public bool GetServerState()
+    {
+        bool grinding = IsGrinding();
+        GrindInputState currClientCmd;
+
+        while(serverGrindHistory.Count > 0)
+        {
+            // get client input
+            currClientCmd = serverGrindHistory.Peek();
+            // apply client input
+            grinding = UpdateGrinding(grinding, currClientCmd.grind);
+            // set input as acknowledged
+            lastAckGrindCmdID = currClientCmd.id;
+            // something about timestamp
+            // input is processed, remove it
+            serverGrindHistory.Dequeue();
+        }
+
+        // return the determined final state
+        return grinding;
+    }
+
+    public bool UpdateGrinding(bool grindingState, Button grindInput)
+    {
+        return true;
     }
 
     public void FixedUpdate()
@@ -354,4 +426,24 @@ public class RailGrindCont : MonoBehaviour
     {
         return currentRailInfo != null;
     }
+
+    // networking functions
+    private delegate void ServerGrindDetached();
+    private event ServerGrindDetached EventServerGrindDetached;
+
+    // called whenever the server recognizes a rail detach
+    void OnServerGrindDetached()
+    {
+        Debug.Log("detached from rail on server");
+        Detach();
+    }
+
+    [Command(channel = 3)]
+    private void CmdUploadGrindInput(GrindInputState grindInputState)
+    {
+        // server recieves inputs from client
+        masterComp.inputCont.shipInputs.grind = grindInputState.grind;
+        Debug.Log("grind cmd recieved");
+    }
+
 }

@@ -34,6 +34,12 @@ public class GravityRing : GravityRail
 
         calcRangeData();
         UpdateLines();
+
+        lineRenderer.SetVertexCount(linePoints.Count);
+        for( int i = 0; i < linePoints.Count; ++i)
+        {
+            lineRenderer.SetPosition(i, linePoints[i]);
+        }
     }
 
     public override void Reset()
